@@ -2,6 +2,8 @@
 
 Study tools, animations and other things we make. A plain static website: no build step, no database. Every page is just an HTML file.
 
+**Live site:** https://gurnoorsidhoo.github.io/mudfiles/
+
 ## How the site is organised
 
 ```
