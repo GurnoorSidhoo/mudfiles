@@ -1,0 +1,228 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pulse wave and Windkessel · mudfiles</title>
+<meta name="description" content="Interactive animation of the pulse wave and the Windkessel effect in the aorta and large arteries.">
+<style>
+:root{--bg:#faf9f5;--card:#f1efe8;--text:#222;--muted:#5f5e5a;--border:#d3d1c7;--out:#1D9E75;--st:#E24B4A;--sysbg:#FCEBEB;--systx:#791F1F;--diabg:#E1F5EE;--diatx:#085041;}
+@media (prefers-color-scheme: dark){:root{--bg:#1f1e1d;--card:#2c2c2a;--text:#eee;--muted:#b4b2a9;--border:#444441;--out:#5DCAA5;--st:#F09595;--sysbg:#501313;--systx:#F7C1C1;--diabg:#04342C;--diatx:#9FE1CB;}}
+body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,"Segoe UI",sans-serif;line-height:1.6;}
+main{max-width:900px;margin:0 auto;padding:24px 16px;}
+h1{font-size:22px;font-weight:500;margin:0 0 4px;}
+h2{font-size:16px;font-weight:500;margin:24px 0 8px;}
+p.sub{color:var(--muted);margin:0 0 16px;font-size:15px;}
+.controls{display:flex;flex-wrap:wrap;align-items:center;gap:16px;margin:0 0 12px;font-size:14px;color:var(--muted);}
+button{font:inherit;font-size:14px;padding:6px 14px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--text);cursor:pointer;}
+button:hover{background:var(--card);}
+label{display:flex;align-items:center;gap:8px;}
+canvas{width:100%;display:block;}
+.phase{display:flex;gap:12px;align-items:flex-start;padding:12px 16px;border-radius:8px;margin-bottom:8px;min-height:52px;}
+.pill{font-size:13px;font-weight:500;padding:2px 10px;border-radius:8px;border:1px solid currentColor;white-space:nowrap;}
+.phase.sys{background:var(--sysbg);color:var(--systx);}
+.phase.dia{background:var(--diabg);color:var(--diatx);}
+.bar{position:relative;height:30px;border:1px dashed var(--muted);border-radius:6px;overflow:hidden;display:flex;}
+.seg{height:100%;}
+.seg.out{background:var(--out);}
+.seg.st{background:var(--st);}
+.legend{display:flex;flex-wrap:wrap;gap:8px 20px;font-size:14px;color:var(--muted);margin-top:8px;}
+.legend span b{color:var(--text);font-weight:500;}
+.sw{display:inline-block;width:12px;height:12px;border-radius:3px;vertical-align:-1px;margin-right:6px;}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-top:12px;}
+.m{background:var(--card);border-radius:8px;padding:12px 16px;}
+.m .l{font-size:13px;color:var(--muted);}
+.m .v{font-size:22px;font-weight:500;}
+.m .s{font-size:12px;color:var(--muted);}
+.mf-back{display:inline-block;font-size:14px;color:var(--muted);text-decoration:none;margin:0 0 16px;}
+.mf-back:hover{color:var(--text);}
+.mf-src{font-size:13px;color:var(--muted);margin:0 0 12px;}
+ul{font-size:15px;color:var(--muted);padding-left:20px;margin-top:8px;}
+</style>
+</head>
+<body>
+<main>
+<a class="mf-back" href="../../">&larr; mudfiles</a>
+<p class="mf-src">Physiology &middot; MED1200 Week 11 &middot; Arteries, arterioles and the distribution of blood flow</p>
+<h1>Pulse wave and the Windkessel effect</h1>
+<p class="sub">Each beat the ventricle ejects about 70 mL in about 0.3 seconds. A bit over a third runs straight on to the tissues during systole; the rest (nearly two-thirds) is parked in the stretched aorta and large arteries, then pushed onward by elastic recoil during diastole. Shown in slow motion at 75 beats per minute.</p>
+
+<div class="controls">
+  <button id="pp">Pause</button>
+  <label>Speed <input type="range" id="spd" min="0.05" max="0.75" step="0.05" value="0.3" style="width:120px;"><span id="spdo" style="min-width:110px;color:var(--text);font-weight:500;">0.3× real time</span></label>
+  <label><input type="checkbox" id="trk" checked> Track one red cell</label>
+</div>
+
+<div id="phase" class="phase sys"><span class="pill" id="pill">Systole</span><span id="ptxt"></span></div>
+<canvas id="cv" style="height:345px;"></canvas>
+
+<h2>Where this beat's 70 mL has gone</h2>
+<div class="bar"><div class="seg out" id="bOut"></div><div class="seg st" id="bSt"></div></div>
+<div class="legend">
+  <span><i class="sw" style="background:var(--out)"></i>Flowed on to tissues: <b id="vOut">0 mL</b></span>
+  <span><i class="sw" style="background:var(--st)"></i>Stored in stretched walls: <b id="vSt">0 mL</b></span>
+  <span><i class="sw" style="border:1px dashed var(--muted)"></i>Still in ventricle: <b id="vLV">70 mL</b></span>
+</div>
+
+<h2>Flow in from the heart vs flow out to the tissues</h2>
+<canvas id="cv2" style="height:170px;"></canvas>
+<div class="legend">
+  <span><i class="sw" style="background:var(--st)"></i>Ejection from ventricle (pulsatile)</span>
+  <span><i class="sw" style="background:var(--out)"></i>Runoff to tissues (much smoother; rises and falls a little with aortic pressure)</span>
+  <span>Shaded red: inflow exceeds outflow, so the walls stretch. Shaded green: walls recoil and supply the outflow.</span>
+</div>
+
+<div class="grid">
+  <div class="m"><div class="l">Aortic pressure now</div><div class="v" id="mp">0 mmHg</div><div class="s" id="mps"></div></div>
+  <div class="m"><div class="l">Tracked red cell is in</div><div class="v" id="mb">Aorta</div><div class="s" id="mbs"></div></div>
+  <div class="m"><div class="l">Heartbeats</div><div class="v" id="mh">1</div><div class="s">75 per minute, 0.8 s each</div></div>
+</div>
+<ul>
+  <li>Purple marker: the pulse wave, a pressure bulge handed from segment to segment. In reality it travels at 5–10 m/s, about 20–50 times faster than the blood itself. Both are slowed here so you can follow them, but the wave still clearly outruns the cells.</li>
+  <li>Red dots: blood cells. Right next to the valve they surge in systole and almost stop in diastole. Further out, elastic recoil keeps them moving between beats, so flow gets steadier the further you go.</li>
+  <li>Wall arrows: pointing out = walls being stretched (storing volume); pointing in = elastic recoil (releasing it). Recoil starts in late systole, as soon as ejection slows below the runoff.</li>
+  <li>Branches: the arterioles and capillaries are drawn as a few vessels standing in for millions. Each one is tiny, but together they have an enormous cross-sectional area (capillaries about 1000 times the aorta), so blood slows right down there, giving time for exchange. Real capillary flow (about 0.3 mm/s) is far slower than shown.</li>
+  <li>Bottom of the top panel: pulse size (purple) actually grows a little along the large arteries, as reflected waves add to it, then is damped across the arterioles, so capillary flow is steady. Average blood speed (green) falls as total cross-sectional area rises.</li>
+</ul>
+</main>
+<script>
+const $=id=>document.getElementById(id);
+const cv=$('cv'),ctx=cv.getContext('2d'),cv2=$('cv2'),c2=cv2.getContext('2d');
+let W=680,H=345,W2=680,H2=170;
+function rs(){const d=window.devicePixelRatio||1;W=cv.clientWidth;cv.width=W*d;cv.height=H*d;ctx.setTransform(d,0,0,d,0,0);W2=cv2.clientWidth;cv2.width=W2*d;cv2.height=H2*d;c2.setTransform(d,0,0,d,0,0);}
+rs();window.addEventListener('resize',rs);
+
+// Colours, re-read if the system switches between light and dark mode
+const mq=window.matchMedia('(prefers-color-scheme: dark)');
+let dark,txt,txp,wallC,lumC,cellC,waveC,envC,outC,stC;
+function setColours(){dark=mq.matches;txt=dark?'#b4b2a9':'#5f5e5a';txp=dark?'#eeeeee':'#222222';wallC=dark?'#F09595':'#A32D2D';lumC=dark?'#4a2827':'#f7e2df';cellC=dark?'#F09595':'#E24B4A';waveC=dark?'#AFA9EC':'#534AB7';envC=dark?'#AFA9EC':'#7F77DD';outC=dark?'#5DCAA5':'#1D9E75';stC=dark?'#F09595':'#E24B4A';}
+setColours();mq.addEventListener('change',setColours);
+
+// Physiology in real time: 75 beats/min, 70 mL stroke volume, 0.3 s ejection
+const T=0.8,TS=0.3,SV=70,QM=SV/T;
+// Two-element Windkessel: the big arteries act as one elastic chamber (compliance CP, mL/mmHg)
+// draining through the arterioles (resistance RP, mmHg·s/mL). Gives about 120/80 mmHg.
+const RP=1.13,CP=1.02;
+// Drawing speeds in tube-lengths per second: pulse wave and average aortic blood speed (both slowed, ratio kept realistic)
+const C=0.84,V0=0.06,CY=114;
+const ph=s=>((s%T)+T)%T;
+function Qin(tau){return tau<TS?SV*Math.PI/(2*TS)*Math.sin(Math.PI*tau/TS):0;}
+function Ein(tau){return tau<TS?SV/2*(1-Math.cos(Math.PI*tau/TS)):SV;}
+// Run the Windkessel for 40 beats so it settles, keeping the last beat's pressure and cumulative outflow
+const NS=800,PA=new Float32Array(NS),OA=new Float32Array(NS);
+(function(){let P=90;const dt=T/NS/10;for(let cyc=0;cyc<40;cyc++){let out=0;for(let i=0;i<NS;i++){PA[i]=P;OA[i]=out;for(let j=0;j<10;j++){const q=P/RP;out+=q*dt;P+=(Qin((i*10+j)*dt)-q)/CP*dt;}}}})();
+const at=(arr,tau)=>arr[Math.min(NS-1,Math.floor(tau/T*NS))];
+const P=tau=>at(PA,tau),Qout=tau=>P(tau)/RP;
+const Out=tau=>Math.min(at(OA,tau),Ein(tau)); // this beat's blood that has flowed on
+const Vst=tau=>Ein(tau)-Out(tau);              // this beat's blood stored in the stretched walls
+let PMIN=1e9,PMAX=0,TPK=0;PA.forEach((p,i)=>{if(p<PMIN)PMIN=p;if(p>PMAX){PMAX=p;TPK=i/NS*T;}});
+const pn=tau=>(P(tau)-PMIN)/(PMAX-PMIN);
+
+const x0=()=>72,x1=()=>W-16,X=u=>x0()+u*(x1()-x0());
+const sm=x=>x<=0?0:x>=1?1:x*x*(3-2*x);
+function rad(u){if(u<0.36)return 28-u*8;if(u<0.7)return 25-(u-0.36)*30;if(u<0.86)return 14.8-(u-0.7)*50;return Math.max(3,6.8-(u-0.86)*80);}
+function A(u){if(u<0.7)return 1+0.25*(u/0.7);const k=(u-0.7)/0.16;return 1.25*Math.exp(-3.2*k);}
+// Average blood speed falls as total cross-sectional area grows.
+// Real aorta-to-capillary ratio is about 1000:1; squashed to about 7:1 here so the cells stay visible.
+function f(u){if(u<0.36)return 1;if(u<0.7)return 1-0.2*(u-0.36)/0.34;if(u<0.86)return 0.8*Math.pow(0.1875,(u-0.7)/0.16);return 0.15;}
+// Flow follows ejection at the valve, the smoother Windkessel runoff further out, and is steady in the capillaries
+function qn(u,tau){const m=Math.min(1,u/0.7),k=sm((u-0.7)/0.2);return (1-m)*Qin(tau)/QM+m*((1-k)*Qout(tau)/QM+k);}
+function disp(u,t){return A(u)*12*pn(ph(t-u/C));}
+function vel(u,t){return V0*f(u)*qn(u,ph(t-u/C));}
+// One trunk splits into 3 arterioles, each into 3 capillaries (standing in for millions)
+const S1=40,S2=13;
+function cy(u,b){return CY+(Math.floor(b/3)-1)*S1*sm((u-0.7)/0.1)+(b%3-1)*S2*sm((u-0.86)/0.05);}
+const TUBES=[[0,0.705,4],[0.695,0.87,1],[0.695,0.87,4],[0.695,0.87,7]];for(let b=0;b<9;b++)TUBES.push([0.855,1.04,b]);
+function tube(u0,u1,b,extra){
+ const pts=[];for(let u=u0;u<u1+0.002;u+=0.004)pts.push([X(u),cy(u,b),rad(u)+disp(u,t)+extra(u)]);
+ const L=pts.length,nrm=i=>{const a=pts[Math.max(0,i-1)],c=pts[Math.min(L-1,i+1)],dx=c[0]-a[0],dy=c[1]-a[1],l=Math.hypot(dx,dy)||1;return[-dy/l,dx/l];};
+ ctx.beginPath();
+ for(let i=0;i<L;i++){const n=nrm(i),p=pts[i];i?ctx.lineTo(p[0]-n[0]*p[2],p[1]-n[1]*p[2]):ctx.moveTo(p[0]-n[0]*p[2],p[1]-n[1]*p[2]);}
+ for(let i=L-1;i>=0;i--){const n=nrm(i),p=pts[i];ctx.lineTo(p[0]+n[0]*p[2],p[1]+n[1]*p[2]);}
+ ctx.closePath();ctx.fill();
+}
+const SEGS=[[0,0.36,'Aorta','avg ~20 cm/s'],[0.36,0.7,'Large arteries (carotid, iliac)','~10–20 cm/s','Large arteries'],[0.7,0.86,'Arterioles','a few mm/s'],[0.86,1,'Capillaries','~0.3 mm/s']];
+const segOf=u=>SEGS.find(s=>u<s[1])||SEGS[3];
+const cell=u=>({u,s:Math.random()*1.6-0.8,b:Math.floor(Math.random()*9)});
+// Start the cells spread out the way they settle: more of them where blood moves slowly
+const cells=[];while(cells.length<90){const u=Math.random();if(Math.random()<0.15/f(u))cells.push(cell(u));}
+const tr=cell(0.02);
+let t=0,last=null,run=true,spd=0.3,lastPhase='';
+$('spd').oninput=e=>{spd=+e.target.value;$('spdo').textContent=(+spd.toFixed(2))+'× real time';};
+$('pp').onclick=()=>{run=!run;$('pp').textContent=run?'Pause':'Play';};
+$('mps').textContent='swings between about '+Math.round(PMIN)+' and '+Math.round(PMAX);
+const PT={sys:'Aortic valve open. The ventricle ejects faster than blood can drain away through the arterioles, so nearly two-thirds of the stroke volume stretches the aorta and large arteries instead of flowing straight on. Pressure climbs to about 120 mmHg.',
+dia:'Aortic valve closed, no inflow from the heart. Blood right by the valve almost stops, but the stretched elastic walls recoil and squeeze the stored blood onward, so flow to the tissues continues and pressure only falls to about 80 mmHg instead of zero.'};
+function arrow(x,y,dy){ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x,y+dy);ctx.stroke();ctx.beginPath();ctx.moveTo(x,y+dy);ctx.lineTo(x-4,y+dy-Math.sign(dy)*5);ctx.lineTo(x+4,y+dy-Math.sign(dy)*5);ctx.closePath();ctx.fill();}
+function draw(){
+ const tau=ph(t),sys=tau<TS;
+ ctx.clearRect(0,0,W,H);
+ const lvFrac=sys?1-0.4*Ein(tau)/SV:0.6+0.4*Math.min(1,(tau-TS)/(T-TS-0.1));
+ const lh=80*lvFrac,lw=44*(0.75+0.25*lvFrac);
+ ctx.fillStyle=lumC;ctx.strokeStyle=wallC;ctx.lineWidth=2.5;
+ ctx.beginPath();ctx.roundRect?ctx.roundRect(60-lw,CY-lh/2,lw,lh,14):ctx.rect(60-lw,CY-lh/2,lw,lh);ctx.fill();ctx.stroke();
+ ctx.fillStyle=txp;ctx.font='12px sans-serif';ctx.textAlign='center';ctx.fillText('LV',60-lw/2,CY+4);
+ // Vessels: fill every wall outline first, then every lumen on top, so the branch points join cleanly
+ ctx.fillStyle=wallC;TUBES.forEach(([a,b,br])=>tube(a,b,br,u=>u<0.86?2.5:1.5));
+ ctx.fillStyle=lumC;TUBES.forEach(([a,b,br],i)=>tube(i?a:a-0.012,b,br,()=>0));
+ const r0=rad(0)+disp(0,t);ctx.strokeStyle=wallC;ctx.lineWidth=3;ctx.beginPath();
+ if(sys){ctx.moveTo(x0(),CY-r0);ctx.lineTo(x0()+16,CY-r0+5);ctx.moveTo(x0(),CY+r0);ctx.lineTo(x0()+16,CY+r0-5);}
+ else{ctx.moveTo(x0(),CY-r0);ctx.lineTo(x0()+6,CY-1);ctx.moveTo(x0(),CY+r0);ctx.lineTo(x0()+6,CY+1);}
+ ctx.stroke();
+ ctx.fillStyle=txt;ctx.font='12px sans-serif';ctx.textAlign='center';ctx.fillText(sys?'valve open':'valve closed',x0()+4,CY-r0-12);
+ const cpos=c=>{const r=rad(c.u)+disp(c.u,t);return[X(c.u),cy(c.u,c.b)+c.s*Math.max(0,r-4)];};
+ ctx.fillStyle=cellC;
+ cells.forEach(c=>{const p=cpos(c);ctx.beginPath();ctx.arc(p[0],p[1],2.4,0,7);ctx.fill();});
+ if($('trk').checked){const p=cpos(tr);ctx.beginPath();ctx.arc(p[0],p[1],5,0,7);ctx.fillStyle=txp;ctx.fill();ctx.font='12px sans-serif';ctx.textAlign='center';ctx.fillText('tracked cell',p[0],p[1]-10);}
+ [0.1,0.22].forEach(u=>{const lt=ph(t-u/C),net=Qin(lt)-Qout(lt);if(Math.abs(net)<15)return;const out=net>0;const x=X(u),r=rad(u)+disp(u,t);ctx.strokeStyle=out?stC:outC;ctx.fillStyle=out?stC:outC;ctx.lineWidth=2;
+  if(out){arrow(x,CY-r-4,-12);arrow(x,CY+r+4,12);}else{arrow(x,CY-r-16,12);arrow(x,CY+r+16,-12);}});
+ for(let k=Math.floor(t/T)-3;k<=Math.floor(t/T);k++){const u=(t-k*T-TPK)*C;if(u>0.25&&u<0.7){const x=X(u),yt=CY-rad(u)-disp(u,t)-8;ctx.fillStyle=waveC;ctx.beginPath();ctx.moveTo(x,yt);ctx.lineTo(x-6,yt-10);ctx.lineTo(x+6,yt-10);ctx.closePath();ctx.fill();ctx.font='12px sans-serif';ctx.textAlign='center';ctx.fillText('pulse wave',x,yt-15);}}
+ const narrow=W<560;
+ SEGS.forEach((s,i)=>{const a=X(s[0]),b=X(s[1]);ctx.font='12px sans-serif';ctx.fillStyle=txt;ctx.textAlign='center';
+  const name=s[4]&&ctx.measureText(s[2]).width>b-a-8?s[4]:s[2];
+  // On phones: no speed line (the tile below shows it) and the two short segments' names step down, so nothing overlaps
+  if(narrow){if(i===3)ctx.textAlign='right';ctx.fillText(name,i===3?W-2:(a+b)/2,CY+80+Math.max(0,i-1)*15);}
+  else{ctx.fillText(name,(a+b)/2,CY+80);ctx.font='11px sans-serif';ctx.globalAlpha=0.8;ctx.fillText(s[3],(a+b)/2,CY+95);}
+  ctx.strokeStyle=txt;ctx.globalAlpha=0.35;ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(b,CY+68);ctx.lineTo(b,CY+100);ctx.stroke();ctx.globalAlpha=1;});
+ const by=H-12,eh=56,N=200;
+ ctx.font='12px sans-serif';
+ ctx.strokeStyle=txt;ctx.globalAlpha=0.35;ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(x0(),by);ctx.lineTo(x1(),by);ctx.stroke();ctx.globalAlpha=1;
+ ctx.strokeStyle=envC;ctx.lineWidth=2;ctx.beginPath();for(let i=0;i<=N;i++){const u=i/N,y=by-eh*A(u)/1.3;i?ctx.lineTo(X(u),y):ctx.moveTo(X(u),y);}ctx.stroke();
+ ctx.strokeStyle=outC;ctx.setLineDash([5,4]);ctx.beginPath();for(let i=0;i<=N;i++){const u=i/N,y=by-eh*0.55*f(u);i?ctx.lineTo(X(u),y):ctx.moveTo(X(u),y);}ctx.stroke();ctx.setLineDash([]);
+ ctx.textAlign='left';ctx.fillStyle=envC;ctx.fillText('Pulse size along the tree',x0(),by-eh-6);
+ ctx.fillStyle=outC;ctx.fillText('Average blood speed',x0(),by-eh*0.55+15);
+ ctx.textAlign='right';ctx.fillStyle=txt;if(!narrow){ctx.fillText('pulse damped,',x1(),by-eh*0.55-8);ctx.fillText('flow slowest',x1(),by-eh*0.55+7);}
+ drawFlow();
+ const o=Out(tau),s=Vst(tau),lv=SV-Ein(tau);
+ $('bOut').style.width=(o/SV*100)+'%';$('bSt').style.width=(s/SV*100)+'%';
+ $('vOut').textContent=Math.round(o)+' mL';$('vSt').textContent=Math.round(s)+' mL';$('vLV').textContent=Math.round(lv)+' mL';
+ $('mp').textContent=Math.round(P(tau))+' mmHg';
+ const sg=segOf(tr.u);$('mb').textContent=sg[4]||sg[2];$('mbs').textContent='real average speed '+sg[3].replace('avg ','');
+ $('mh').textContent=Math.floor(t/T)+1;
+ const p=sys?'sys':'dia';if(p!==lastPhase){lastPhase=p;$('phase').className='phase '+p;$('pill').textContent=sys?'Systole':'Diastole';$('ptxt').textContent=PT[p];}
+}
+function drawFlow(){
+ c2.clearRect(0,0,W2,H2);
+ const L=40,R=W2-12,Tp=10,B=H2-26,qmax=420,span=2*T;
+ const X2=s=>L+(s-(t-span))/span*(R-L),Y=q=>B-q/qmax*(B-Tp),S=px=>(t-span)+(px-L)/(R-L)*span;
+ for(let k=Math.floor((t-span)/T);k<=Math.floor(t/T);k++){const a=Math.max(k*T,t-span),b=Math.min(k*T+TS,t);if(b>a){c2.fillStyle=dark?'rgba(255,255,255,0.05)':'rgba(0,0,0,0.04)';c2.fillRect(X2(a),Tp,X2(b)-X2(a),B-Tp);c2.fillStyle=txt;c2.font='11px sans-serif';c2.textAlign='center';if(X2(b)-X2(a)>40)c2.fillText('systole',(X2(a)+X2(b))/2,Tp+12);}}
+ for(let px=L;px<=R;px+=1){const tau=ph(S(px)),q=Qin(tau),qo=Qout(tau);c2.fillStyle=q>qo?(dark?'rgba(240,149,149,0.25)':'rgba(226,75,74,0.18)'):(dark?'rgba(93,202,165,0.25)':'rgba(29,158,117,0.18)');c2.fillRect(px,Math.min(Y(q),Y(qo)),1,Math.abs(Y(q)-Y(qo)));}
+ c2.strokeStyle=txt;c2.globalAlpha=0.4;c2.lineWidth=1;c2.beginPath();c2.moveTo(L,Tp);c2.lineTo(L,B);c2.lineTo(R,B);c2.stroke();c2.globalAlpha=1;
+ c2.lineWidth=2;
+ [[stC,Qin],[outC,Qout]].forEach(([col,fn])=>{c2.strokeStyle=col;c2.beginPath();for(let px=L;px<=R;px+=2){const y=Y(fn(ph(S(px))));px===L?c2.moveTo(px,y):c2.lineTo(px,y);}c2.stroke();});
+ c2.fillStyle=txt;c2.font='11px sans-serif';c2.textAlign='right';c2.fillText('mL/s',L-4,Tp+8);c2.fillText('200',L-4,Y(200)+4);c2.fillText('0',L-4,B+4);
+ c2.textAlign='center';c2.fillText('time (last two beats) → now',(L+R)/2,H2-8);
+ c2.strokeStyle=txp;c2.setLineDash([3,3]);c2.beginPath();c2.moveTo(R,Tp);c2.lineTo(R,B);c2.stroke();c2.setLineDash([]);
+}
+function step(ts){
+ if(last===null)last=ts;let dt=Math.min(0.05,(ts-last)/1000);last=ts;
+ if(run){dt*=spd;t+=dt;
+  cells.forEach(c=>{c.u+=Math.max(0.0005,vel(c.u,t))*dt;if(c.u>1)Object.assign(c,cell(0));});
+  tr.u+=Math.max(0.0005,vel(tr.u,t))*dt;if(tr.u>1)Object.assign(tr,cell(0.02));
+ }
+ draw();requestAnimationFrame(step);
+}
+requestAnimationFrame(step);
+</script>
+</body>
+</html>

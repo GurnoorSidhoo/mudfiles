@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 360">
+  <rect width="640" height="360" fill="#FCEBEB"/>
+  <!-- vessel lumen with a pulse bulge, tapering left to right -->
+  <path d="M40 140 C 120 140, 150 112, 200 112 C 250 112, 280 146, 360 150 C 440 154, 520 166, 600 172
+           L 600 188 C 520 194, 440 206, 360 210 C 280 214, 250 248, 200 248 C 150 248, 120 220, 40 220 Z"
+        fill="#E24B4A" fill-opacity="0.16"/>
+  <path d="M40 140 C 120 140, 150 112, 200 112 C 250 112, 280 146, 360 150 C 440 154, 520 166, 600 172"
+        fill="none" stroke="#A32D2D" stroke-width="6" stroke-linecap="round"/>
+  <path d="M40 220 C 120 220, 150 248, 200 248 C 250 248, 280 214, 360 210 C 440 206, 520 194, 600 188"
+        fill="none" stroke="#A32D2D" stroke-width="6" stroke-linecap="round"/>
+  <!-- pulse wave marker -->
+  <path d="M200 92 L188 72 L212 72 Z" fill="#534AB7"/>
+  <!-- outward arrows: wall stretch -->
+  <g stroke="#E24B4A" stroke-width="4" stroke-linecap="round" fill="#E24B4A">
+    <line x1="130" y1="122" x2="130" y2="98"/><path d="M122 104 L130 92 L138 104 Z"/>
+    <line x1="130" y1="238" x2="130" y2="262"/><path d="M122 256 L130 268 L138 256 Z"/>
+  </g>
+  <!-- red cells -->
+  <g fill="#E24B4A">
+    <circle cx="80" cy="168" r="6"/><circle cx="110" cy="192" r="6"/><circle cx="170" cy="160" r="6"/>
+    <circle cx="215" cy="205" r="6"/><circle cx="250" cy="172" r="6"/><circle cx="300" cy="196" r="6"/>
+    <circle cx="350" cy="174" r="6"/><circle cx="410" cy="190" r="6"/><circle cx="460" cy="178" r="6"/>
+    <circle cx="520" cy="184" r="6"/><circle cx="570" cy="179" r="6"/>
+  </g>
+  <circle cx="270" cy="190" r="11" fill="#222"/>
+  <!-- steady runoff line -->
+  <line x1="40" y1="310" x2="600" y2="310" stroke="#1D9E75" stroke-width="5" stroke-linecap="round"/>
+  <path d="M40 310 C 70 310, 80 290, 100 290 C 120 290, 130 310, 160 310 L 600 310" fill="none" stroke="#A32D2D" stroke-width="3" stroke-opacity="0.5"/>
+</svg>
